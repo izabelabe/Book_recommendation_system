@@ -19,9 +19,13 @@
 
              <h3>{{ book.book_title }}</h3>
             <p>Author: {{ book.book_author }}</p>
+            {% if book.isbn %}
             <p>ISBN: {{ book.isbn }}</p>
+             {% endif %}
             <p>Publisher: {{ book.publisher }}</p>
+            {% if book.year_of_publication != '0' %}
             <p>Year of Publication: {{ book.year_of_publication }}</p>
+             {% endif %}
          </div>
         {% endfor %}
 

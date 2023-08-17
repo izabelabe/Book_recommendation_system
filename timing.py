@@ -2,6 +2,7 @@ import time
 
 from RecommendationSystem import get_recommendations
 from RedisSystem import get_recommendations_redis
+from MongoDBSystem import get_recommendations_mongo
 
 # inserting all the records
 
@@ -22,7 +23,7 @@ def deleting_time(rs):
 # getting the recommendation for given user
 def recommendation_time(userid):
     tic = time.perf_counter()
-    get_recommendations_redis(userid)
+    get_recommendations_mongo(userid)
     toc = time.perf_counter()
     print(f"Found recommendations for user in {toc - tic:0.4f} seconds")
 
@@ -45,9 +46,9 @@ def updating_time(rs, userid, isbn, rating):
 
 
 def time_all(rs):
-    #for _ in range(10):
-    #    deleting_time(rs)
-    #    inserting_time(rs)
+    for _ in range(10):
+        deleting_time(rs)
+        inserting_time(rs)
 
     userid = 193560 #user with 849 ratigns
     userid2 = 191728  # user with 5 records
@@ -66,11 +67,11 @@ def time_all(rs):
     isbn1= "0099850001"
     isbn2 = "0676972152"
 
-   # for n in range(5):
-   #     updating_time(rs, userid, isbn1, n)
+    for n in range(5):
+        updating_time(rs, userid, isbn1, n)
 
-   # for n in range(5):
-   #     updating_time(rs, userid2, isbn2, n)
+    for n in range(5):
+        updating_time(rs, userid2, isbn2, n)
 
 
     userid_list = [193560, 191756, 250764, 91501, 91408, 276747, 276854, 78440, 247488, 156150]

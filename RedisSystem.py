@@ -43,7 +43,7 @@ class RedisRecommendationSystem:
                 book_data = {
                     'book_title': row['Book-Title'],
                     'book_author': row['Book-Author'],
-                    'year': int(row['Year-Of-Publication']) if row['Year-Of-Publication'].isdigit() else 0,
+                    'year_of_publication': int(row['Year-Of-Publication']) if row['Year-Of-Publication'].isdigit() else 0,
                     'publisher': row['Publisher'],
                     'image_s': row['Image-URL-S'],
                     'image_m': row['Image-URL-M'],
@@ -66,7 +66,6 @@ class RedisRecommendationSystem:
             for row in csv_reader:
                 user_id = int(row['User-ID'])
                 isbn = row['ISBN']
-                #isbn = isbn.zfill(10)
                 isbn = isbn[::-1].zfill(10)[::-1]
                 book_rating = int(row['Book-Rating'])
 
@@ -161,7 +160,6 @@ class RedisRecommendationSystem:
         for user_id in unique_users:
             redis_key = f"ratings:user:{user_id}"
             user_ratings = self.r.zrange(redis_key, 0, -1, withscores=True)
-
             user_index = user_to_index[user_id]
             for isbn, rating in user_ratings:
                 book_index = unique_books.index(isbn)
