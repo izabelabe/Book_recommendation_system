@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recommendation System</title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'styles.css')}}" />
+</head>
+<body>
+<header  id = "start_page_header">
+<h1>BOOK RECOMMENDATION SYSTEM</h1>
+</header>
+<section class = "start_page">
+   <h3 id = "user_input_header">PLEASE ENTER YOUR USER ID</h3>
+
+
+    <form method="POST">
+        <input type="text" name="user_input"  required pattern="[0-9]*"  maxlength="9" >
+        <button type="submit"  onclick="checkAndSubmit()">SEND</button>
+        <div id="loader_container"> <div id="loader"> </div> </div>
+    </form>
+    {% if error %}
+        <p id="error">There is no user of such ID. Please try again.</p>
+    {% else %}
+        <p id="success"></p>
+    {% endif %}
+
+</section>
+</body>
+
+<script>
+function checkAndSubmit() {
+    const userInput = document.querySelector('input[name="user_input"]');
+    const loader = document.getElementById('loader');
+
+    if (userInput.validity.valid) {
+        loader.style.visibility = 'visible';
+    }
+}
+</script>
+
+</html>

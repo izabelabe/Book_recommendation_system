@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recommendation System</title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'styles.css')}}" />
+</head>
+<body>
+<header>
+ <a href="/" class="btn"> <img src="static/left-arrow.png" alt="Back to Input Form"></a>
+    <h1>BOOK RECOMMENDATION SYSTEM</h1>
+</header>
+<h2>RECOMMENDATIONS FOR YOU</h2>
+    <section class = "books">
+
+        {% for book in book_data %}
+         <div class="book">
+                <img src="{{ book.image_s }}" alt="{{ book.book_title }}" onload="checkImageSize(this)">
+
+             <h3>{{ book.book_title }}</h3>
+            <p>Author: {{ book.book_author }}</p>
+            <p>ISBN: {{ book.isbn }}</p>
+            <p>Publisher: {{ book.publisher }}</p>
+            <p>Year of Publication: {{ book.year_of_publication }}</p>
+         </div>
+        {% endfor %}
+
+    </section>
+</body>
+
+<script>
+function checkImageSize(img) {
+    var minSize = 7; // Set your minimum size in pixels
+    var imgObj = new Image();
+    imgObj.src = img.src;
+
+    imgObj.onload = function() {
+        if (imgObj.width < minSize || imgObj.height < minSize) {
+            // Replace with alternative image
+            img.src = "static/book-icon.png";
+        }
+    };
+}
+</script>
+
+</html>
