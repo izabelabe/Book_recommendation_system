@@ -217,18 +217,13 @@ def get_recommendations(userid):
     elif best == -2:
         return rs.get_general_recommendations()
     else:
-
-        for book in best:
-            print(book)
-        for book in worst:
-            print(book)
         ids = rs.get_user_ids(best, worst)
+        if userid not in ids:
+            ids.append(user_id)
         unique_ids = set(ids)
-        print(unique_ids)
+
         user_ids = [row.userid for row in unique_ids]
         user_item_matrix, unique_users, unique_books = rs.create_user_item_matrix(user_ids)
-        print(unique_users)
-        print(unique_books)
         target_user_index = unique_users.index(user_id)
         book_indexes = book_recommendations_indexes(user_item_matrix, target_user_index)
 

@@ -269,6 +269,8 @@ def get_recommendations_redis(userid):
         return rrs.get_general_recommendations()
     else:
         ids = rrs.get_user_ids(best, worst)
+        if userid not in ids:
+            ids.add(user_id)
         user_item_matrix, unique_users, unique_books = rrs.create_user_item_matrix(ids)
 
         unique_users = [int(item) for item in unique_users]

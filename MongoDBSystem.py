@@ -215,6 +215,8 @@ def get_recommendations_mongo(userid):
         return rs.get_general_recommendations()
     else:
         ids = rs.get_user_ids(best, worst)
+        if userid not in ids:
+            ids.append(user_id)
         user_item_matrix, unique_users, unique_books = rs.create_user_item_matrix(ids)
 
         target_user_index = unique_users.index(user_id)
