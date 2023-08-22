@@ -105,6 +105,7 @@ class RecommendationSystem:
                 return -2, None
 
         sorted_user_ratings = sorted(user_ratings, key=lambda x: x.book_rating, reverse=True)
+        print(sorted_user_ratings)
         best_rated_books = sorted_user_ratings[:2]
         sorted_user_ratings = sorted_user_ratings[2:]
         worst_rated_books = sorted_user_ratings[-2:]
@@ -216,11 +217,18 @@ def get_recommendations(userid):
     elif best == -2:
         return rs.get_general_recommendations()
     else:
+
+        for book in best:
+            print(book)
+        for book in worst:
+            print(book)
         ids = rs.get_user_ids(best, worst)
         unique_ids = set(ids)
+        print(unique_ids)
         user_ids = [row.userid for row in unique_ids]
         user_item_matrix, unique_users, unique_books = rs.create_user_item_matrix(user_ids)
-
+        print(unique_users)
+        print(unique_books)
         target_user_index = unique_users.index(user_id)
         book_indexes = book_recommendations_indexes(user_item_matrix, target_user_index)
 

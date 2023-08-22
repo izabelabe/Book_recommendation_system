@@ -157,7 +157,7 @@ h2 {
 
 
 .books {
-    width: 75vw; /* Span from left to right */
+    width: 75vw;
     min-height: calc(65vh - 40px);
     height: auto;
     align-items: center;
@@ -171,7 +171,7 @@ h2 {
 
 
 .book {
-    width: 20vw; /* Adjust the width as needed */
+    width: 20vw;
     height: 30vh;;
     margin: 20px 0px 5px 0px;
     padding: 10px;

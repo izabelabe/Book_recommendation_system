@@ -34,13 +34,12 @@
 
 <script>
 function checkImageSize(img) {
-    var minSize = 7; // Set your minimum size in pixels
+    var minSize = 7;
     var imgObj = new Image();
     imgObj.src = img.src;
 
     imgObj.onload = function() {
         if (imgObj.width < minSize || imgObj.height < minSize) {
-            // Replace with alternative image
             img.src = "static/book-icon.png";
         }
     };
