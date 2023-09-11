@@ -56,7 +56,34 @@ header h1 {
 }
 
 
-form {
+#OptionButton {
+    position: absolute;
+    display: flex;
+    top: 2em;
+    left: 91%;
+    opacity: 80%;
+    border-radius: 5em;
+    min-height: 40px;
+    width: 7vw;
+    max-width: 150px;
+    background-color: #E6B589 ;
+    color: #615055;
+    font-size: 16px;
+    text-align: center;  align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+
+
+#OptionButton:hover {
+opacity: 100%;
+}
+
+
+
+
+#loginForm{
     width: 23vw;
     align-items: center;
     justify-content: center;
@@ -64,7 +91,8 @@ form {
     white-space: nowrap;
 }
 
-input {
+
+ input{
     border-radius: 5em;
     height: 55px;
     width: 100%;
@@ -73,6 +101,20 @@ input {
     font-weight: bold;
     padding-left: 30px;
     left: -30px;
+
+}
+
+
+#signUpForm {
+    width: 23vw;
+    align-items: center;
+    justify-content: center;
+    height: 70px;
+    padding-top: 5px;
+}
+
+#signUpForm input {
+margin-top: 23px;
 }
 
 button {
@@ -88,7 +130,6 @@ button {
     left: calc(-8vw - 30px);
     color: #615055;
     font-weight: bold;
-
 }
 
 button:hover {
@@ -198,3 +239,35 @@ top: 5px;
 color: red;
 }
 
+.error2 {
+position: relative;
+top: 48px;
+color: red;
+height: 10px;
+}
+
+.error3 {
+position: relative;
+top: 80px;
+left: -5px;
+color: red;
+height: 10px;
+}
+
+#success {
+position: relative;
+top: 48px;
+color: green;
+height: 10px;
+}
+
+
+#FormButton {
+left: 31%;
+margin-top: 30px;
+}
+
+.bookAddForm input, .bookAddForm button {
+position: relative;
+top: 40px;
+}

@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 import csv
 from sklearn.metrics.pairwise import cosine_similarity
+from main import book_recommendations_indexes
 import random
 
 class MongoRecommendationSystem:
@@ -97,6 +98,38 @@ class MongoRecommendationSystem:
     def delete_user_ratings(self, userid):
         self.rating_collection.delete_many({'user_id': userid})
 
+    def insert_user(self, userid, location, age):
+        user = self.user_collection.find({'user_id': userid})
+        user = list(user)
+        if user:
+            return -1
+
+        user_data = {
+            'user_id': userid,
+            'location': location,
+            'age': age
+        }
+
+        self.user_collection.insert_one(user_data)
+        return 0
+
+    def add_book_rating(self, userid, isbn, rating):
+        isbn = str(isbn)
+        exists_isbn = self.book_collection.find({'isbn': isbn})
+        exists_isbn = list(exists_isbn)
+        if exists_isbn:
+            existing_rating = self.rating_collection.find_one({'user_id': userid, 'isbn': isbn})
+            if existing_rating:
+                return -2
+            else:
+                rating_data = {
+                    'user_id': userid,
+                    'isbn': isbn,
+                    'book_rating': rating
+                }
+                self.rating_collection.insert_one(rating_data)
+                return 0
+        return -1
 
     def update_book_rating(self, userid, isbn, new_rating):
         self.rating_collection.update_one({'user_id': userid, 'isbn': isbn}, {'$set': {'book_rating': new_rating}})
@@ -108,6 +141,7 @@ class MongoRecommendationSystem:
 
         if not user_ratings:
             user = self.user_collection.find({'user_id': userid})
+            user = list(user)
             if not user:
                 return -1, None
             else:
@@ -143,9 +177,9 @@ class MongoRecommendationSystem:
             unique_books.update(rating['isbn'] for rating in user_ratings)
 
         user_to_index = {user_id: index for index, user_id in enumerate(unique_users)}
-        num_users = len(unique_users)
-        num_books = len(unique_books)
-        user_item_matrix = [[0 for _ in range(num_books)] for _ in range(num_users)]
+        len_users = len(unique_users)
+        len_books = len(unique_books)
+        user_item_matrix = [[0 for _ in range(len_books)] for _ in range(len_users)]
         unique_books = sorted(unique_books, key=self.custom_sort_key)
 
         for user_id in unique_users:
@@ -173,36 +207,7 @@ class MongoRecommendationSystem:
         return list(recommended_books)
 
 
-def book_recommendations_indexes(user_item_matrix, target_user_index, num_neighbors=5, num_recommendations=7):
-    user_similarity = cosine_similarity(user_item_matrix)
-    target_user_similarity = user_similarity[target_user_index]
-    most_similar_users_indices = target_user_similarity.argsort()[::-1][1:num_neighbors + 1]
 
-    target_user_ratings = user_item_matrix[target_user_index]
-    predicted_ratings = target_user_ratings.copy()
-
-    for book_index in range(len(target_user_ratings)):
-        if target_user_ratings[book_index] == 0:  # taking into consideration only books unrated by the user
-            rating_sum = 0
-            similarity_sum = 0
-
-            for neighbor_index in most_similar_users_indices:
-                neighbor_similarity = user_similarity[target_user_index][neighbor_index]
-                neighbor_rating = user_item_matrix[neighbor_index][book_index]
-
-                rating_sum += neighbor_similarity * neighbor_rating
-                similarity_sum += neighbor_similarity
-
-            predicted_ratings[book_index] = rating_sum / (similarity_sum + 1e-6)  # Avoid division by zero
-
-    recommended_books_indices = sorted(range(len(predicted_ratings)), key=lambda i: predicted_ratings[i],
-                                       reverse=True)
-    # eliminating already rated books
-    unrated_books_indices = [book_index for book_index in recommended_books_indices if
-                             target_user_ratings[book_index] == 0]
-    recommended_books = unrated_books_indices[:num_recommendations]
-
-    return recommended_books
 
 
 def get_recommendations_mongo(userid):
@@ -230,3 +235,12 @@ def get_recommendations_mongo(userid):
         return recommendations
 
 
+def addUserMongo(userid, location, age):
+    rs = MongoRecommendationSystem()
+    result = rs.insert_user(userid, location, age)
+    return result
+
+def addRatingMongo(userid, isbn, rating):
+    rs = MongoRecommendationSystem()
+    result = rs.add_book_rating(userid, isbn, rating)
+    return result

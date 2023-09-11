@@ -3,7 +3,7 @@ import csv
 from cassandra.query import BatchStatement
 from sklearn.metrics.pairwise import cosine_similarity
 import random
-
+from main import book_recommendations_indexes
 
 # CREATE KEYSPACE data WITH replication = {'class':'SimpleStrategy', 'replication_factor' : 1};
 # CREATE TABLE users (User-ID int PRIMARY KEY, Location text, Age int);
@@ -23,7 +23,7 @@ class RecommendationSystem:
         batch = BatchStatement()
         with open('BX-Users.csv', 'r') as csvfile:
             csvreader = csv.DictReader(csvfile, delimiter=';')
-            print(csvreader.fieldnames)
+            #print(csvreader.fieldnames)
             for row in csvreader:
                 user_id = int(row['UserID'])
                 location = row['Location']
@@ -75,6 +75,25 @@ class RecommendationSystem:
             if len(batch) > 0:
                 self.session.execute(batch)
 
+    def insert_user(self, userid, location, age):
+        if self.user_exists(userid):
+            return -1
+        else:
+            age = int(age) if age.isdigit() else None
+            location = location  if len(location)>0 else None
+            query = "INSERT INTO users (UserID, Location, Age) VALUES (%s, %s, %s);"
+            self.session.execute(query, (userid, location, age))
+            return 0
+
+
+    def user_exists(self, userid):
+        query = "SELECT * FROM users WHERE userID = %s;"
+        result = self.session.execute(query, (userid,)).all()
+        if not result:
+            return False
+        else:
+            return True
+
     def delete_all(self):
         query = "TRUNCATE books;"
         query2 = "TRUNCATE users;"
@@ -91,6 +110,31 @@ class RecommendationSystem:
         query = f"UPDATE book_ratings SET book_rating = {new_rating} WHERE isbn = %s AND userID = {userid} ;"
         self.session.execute(query, (isbn,))
 
+    def add_book_rating(self, userid, isbn, rating):
+        if self.book_exists(isbn):
+            if self.user_rating_exists(userid, isbn):
+                return -2 #user already rated this book
+            else:
+                rating = int(rating)
+                query = "INSERT INTO book_ratings (UserID, ISBN, book_rating) VALUES (%s, %s, %s);"
+                self.session.execute(query, (userid, isbn, rating))
+                return 0
+        return -1
+
+    def user_rating_exists(self,userid, isbn):
+        query = "SELECT * from book_ratings WHERE userID = %s AND isbn = %s;"
+        result = self.session.execute(query, (userid, isbn,)).all()
+        if not result:
+            return False
+        return True
+    def book_exists(self, isbn):
+        query = "SELECT * FROM books WHERE isbn = %s;"
+        result = self.session.execute(query, (isbn,)).all()
+        if not result:
+            return False
+        else:
+            return True
+
     def best_and_worst_books(self, userid):
         query = "SELECT * from book_ratings WHERE userID = %s;"
         user_ratings = self.session.execute(query, (userid,)).all()
@@ -105,7 +149,6 @@ class RecommendationSystem:
                 return -2, None
 
         sorted_user_ratings = sorted(user_ratings, key=lambda x: x.book_rating, reverse=True)
-        print(sorted_user_ratings)
         best_rated_books = sorted_user_ratings[:2]
         sorted_user_ratings = sorted_user_ratings[2:]
         worst_rated_books = sorted_user_ratings[-2:]
@@ -139,9 +182,9 @@ class RecommendationSystem:
 
         user_to_index = {user_id: index for index, user_id in enumerate(unique_users)}
 
-        num_users = len(unique_users)
-        num_books = len(unique_books)
-        user_item_matrix = [[0 for _ in range(num_books)] for _ in range(num_users)]
+        len_users = len(unique_users)
+        len_books = len(unique_books)
+        user_item_matrix = [[0 for _ in range(len_books)] for _ in range(len_users)]
 
         # filling the matrix with user item matrix with book ratings
         for row in ratings:
@@ -176,37 +219,6 @@ class RecommendationSystem:
         self.session.shutdown()
 
 
-def book_recommendations_indexes(user_item_matrix, target_user_index, num_neighbors=5, num_recommendations=7):
-    user_similarity = cosine_similarity(user_item_matrix)
-    target_user_similarity = user_similarity[target_user_index]
-    most_similar_users_indices = target_user_similarity.argsort()[::-1][1:num_neighbors + 1]
-
-    target_user_ratings = user_item_matrix[target_user_index]
-    predicted_ratings = target_user_ratings.copy()
-
-    for book_index in range(len(target_user_ratings)):
-        if target_user_ratings[book_index] == 0:  # taking into consideration only books unrated by the user
-            rating_sum = 0
-            similarity_sum = 0
-
-            for neighbor_index in most_similar_users_indices:
-                neighbor_similarity = user_similarity[target_user_index][neighbor_index]
-                neighbor_rating = user_item_matrix[neighbor_index][book_index]
-
-                rating_sum += neighbor_similarity * neighbor_rating
-                similarity_sum += neighbor_similarity
-
-            predicted_ratings[book_index] = rating_sum / (similarity_sum + 1e-6)  # Avoid division by zero
-
-    recommended_books_indices = sorted(range(len(predicted_ratings)), key=lambda i: predicted_ratings[i],
-                                       reverse=True)
-    # eliminating already rated books
-    unrated_books_indices = [book_index for book_index in recommended_books_indices if
-                             target_user_ratings[book_index] == 0]
-    recommended_books = unrated_books_indices[:num_recommendations]
-
-    return recommended_books
-
 
 def get_recommendations(userid):
     rs = RecommendationSystem()
@@ -218,11 +230,11 @@ def get_recommendations(userid):
         return rs.get_general_recommendations()
     else:
         ids = rs.get_user_ids(best, worst)
-        if userid not in ids:
-            ids.append(user_id)
         unique_ids = set(ids)
 
         user_ids = [row.userid for row in unique_ids]
+        if userid not in user_ids:
+            ids.append(user_id)
         user_item_matrix, unique_users, unique_books = rs.create_user_item_matrix(user_ids)
         target_user_index = unique_users.index(user_id)
         book_indexes = book_recommendations_indexes(user_item_matrix, target_user_index)
@@ -234,3 +246,14 @@ def get_recommendations(userid):
         recommendations = rs.get_recommended_books(recommended_isbn)
 
         return recommendations
+
+
+def addUser(userid, location, age):
+    rs = RecommendationSystem()
+    result = rs.insert_user(userid, location, age)
+    return result
+
+def addRating(userid, isbn, rating):
+    rs = RecommendationSystem()
+    result = rs.add_book_rating(userid, isbn, rating)
+    return result

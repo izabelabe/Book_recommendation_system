@@ -2,7 +2,7 @@ from neo4j import GraphDatabase
 import csv
 import random
 from sklearn.metrics.pairwise import cosine_similarity
-
+from main import book_recommendations_indexes
 
 class Neo4jRecommendationSystem:
     def __init__(self):
@@ -151,6 +151,40 @@ class Neo4jRecommendationSystem:
             query = "MATCH (:User {user_id: $userid})-[r:RATED]->() DELETE r"
             session.write_transaction(lambda tx: tx.run(query, userid=userid))
 
+    def insert_user(self, userid, location, age):
+        with self.driver.session() as session:
+            query = "MATCH (user:User {user_id: $userid}) RETURN user"
+            user = session.run(query, userid=userid).single()
+            if user is None:
+                query2 = "CREATE (:User {user_id: $user_id, location: $location, age: $age})"
+                session.write_transaction(lambda tx: tx.run(query2, user_id=userid, location=location, age=age))
+                return 0
+            return -1
+
+    def add_book_rating(self, userid, isbn, book_rating):
+        with self.driver.session() as session:
+            query = "MATCH (book:Book {isbn: $isbn}) RETURN book"
+            book =  session.run(query, isbn=isbn).single()
+            if book:
+                #query2 = "MATCH (user:User {user_id: $user_id})-[r:RATED]->(book:Book {isbn: $isbn}) RETURN COUNT(r) AS count"
+                query2 = (
+                    "MATCH (user:User {user_id: $user_id})"
+                    "MATCH (book:Book {isbn: $isbn})"
+                    "RETURN EXISTS((user)-[:RATED]->(book)) AS already_rated"
+                )
+                rating = session.run(query2, user_id=userid, isbn=isbn).single()
+                if rating["already_rated"] > 0:
+                    return -2
+                else:
+                    query3 = (
+                        "MATCH (user:User {user_id: $user_id})"
+                        "MATCH (book:Book {isbn: $isbn})"
+                        "MERGE (user)-[r:RATED]->(book)"
+                        "ON CREATE SET r.rating = $book_rating"
+                    )
+                    session.write_transaction(lambda tx: tx.run(query3, user_id=userid, isbn=isbn, book_rating=book_rating))
+                    return 0
+            return -1
     def update_book_rating(self, userid, isbn, new_rating):
         with self.driver.session() as session:
             query = ("MATCH (user:User {user_id: $userid})-[r:RATED]->(book:Book {isbn: $isbn})"
@@ -243,10 +277,9 @@ class Neo4jRecommendationSystem:
             unique_books = sorted(set(record["isbn"] for record in ratings), key=self.custom_sort_key)
 
             user_to_index = {user_id: index for index, user_id in enumerate(unique_users)}
-
-            num_users = len(unique_users)
-            num_books = len(unique_books)
-            user_item_matrix = [[0 for _ in range(num_books)] for _ in range(num_users)]
+            len_users = len(unique_users)
+            len_books = len(unique_books)
+            user_item_matrix = [[0 for _ in range(len_books)] for _ in range(len_users)]
 
             for rating in ratings:
                 user_index = user_to_index[rating["userid"]]
@@ -282,35 +315,6 @@ class Neo4jRecommendationSystem:
         self.driver.close()
 
 
-def book_recommendations_indexes(user_item_matrix, target_user_index, num_neighbors=5, num_recommendations=7):
-    user_similarity = cosine_similarity(user_item_matrix)
-    target_user_similarity = user_similarity[target_user_index]
-    most_similar_users_indices = target_user_similarity.argsort()[::-1][1:num_neighbors + 1]
-
-    target_user_ratings = user_item_matrix[target_user_index]
-    predicted_ratings = target_user_ratings.copy()
-
-    for book_index in range(len(target_user_ratings)):
-        if target_user_ratings[book_index] == 0:
-            rating_sum = 0
-            similarity_sum = 0
-
-            for neighbor_index in most_similar_users_indices:
-                neighbor_similarity = user_similarity[target_user_index][neighbor_index]
-                neighbor_rating = user_item_matrix[neighbor_index][book_index]
-
-                rating_sum += neighbor_similarity * neighbor_rating
-                similarity_sum += neighbor_similarity
-
-            predicted_ratings[book_index] = rating_sum / (similarity_sum + 1e-6)  # Avoid division by zero
-
-    recommended_books_indices = sorted(range(len(predicted_ratings)), key=lambda i: predicted_ratings[i],
-                                       reverse=True)
-    unrated_books_indices = [book_index for book_index in recommended_books_indices if
-                             target_user_ratings[book_index] == 0]
-    recommended_books = unrated_books_indices[:num_recommendations]
-
-    return recommended_books
 
 
 def get_recommendations_neo4j(userid):
@@ -337,3 +341,15 @@ def get_recommendations_neo4j(userid):
         final_recommendations = [book for book in recommendations if 'book_title' in book]
 
         return final_recommendations
+
+
+def addUserNeo4j(userid, location, age):
+    rs = Neo4jRecommendationSystem()
+    result = rs.insert_user(userid, location, age)
+    return result
+
+
+def addRatingNeo4j(userid, isbn, rating):
+    rs = Neo4jRecommendationSystem()
+    result = rs.add_book_rating(userid, isbn, rating)
+    return result

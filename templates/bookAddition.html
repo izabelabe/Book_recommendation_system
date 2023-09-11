@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recommendation System</title>
+    <link rel="stylesheet" type="text/css" href="{{url_for('static', filename = 'styles.css')}}" />
+</head>
+<body>
+<header  id = "start_page_header">
+    <a href="{{ url_for('books', userid=userid) }}" class="btn"> <img src="static/left-arrow.png" alt="Back to Input Form"></a>
+<h1>BOOK RECOMMENDATION SYSTEM</h1>
+</header>
+<section class = "start_page">
+    <form id="signUpForm" class ="bookAddForm" method="POST">
+        <input id="bookInput" type="text" name="isbn_input" placeholder="BOOK ISBN">
+        <input type="number" name="rating_input" placeholder="RATING" min="0" max="10">
+        <button id="FormButton" type="submit">ADD</button>
+    </form>
+    {% if error == 1 %}
+        <p class="error3">This book does not exist</p>
+    {% elif error == 2 %}
+        <p class="error3"> User has already rated this book</p>
+    {% endif %}
+
+</section>
+</body>
+
+</html>

@@ -2,6 +2,7 @@ import redis
 import csv
 from sklearn.metrics.pairwise import cosine_similarity
 import random
+from main import book_recommendations_indexes
 redis_host = 'localhost'
 redis_port = 6379
 
@@ -80,17 +81,35 @@ class RedisRecommendationSystem:
     def delete_all(self):
         self.r.flushdb()
 
+    def insert_user(self, userid, location, age):
+        if self.r.exists(userid):
+            return -1
+        self.r.hset(userid, 'Location', location)
+        self.r.hset(userid, 'Age', age)
+        return 0
+
+    def add_book_rating(self, userid, isbn, rating):
+        isbn = isbn[::-1].zfill(10)[::-1]
+        if self.r.exists(isbn):
+            score = self.r.zscore(f"ratings:user:{userid}", isbn)
+            if score is not None:
+                return -2 #user already rated this book
+            else:
+                self.r.zadd(f"ratings:user:{userid}", {isbn: rating})
+                self.r.zadd(f"ratings:isbn:{isbn}", {userid: rating})
+                return 0
+        return -1
+
     def delete_user_ratings(self, userid):
-        redis_key = f"ratings:user:{userid}"
-        isbns = self.r.zrange(redis_key, 0, -1)
+            redis_key = f"ratings:user:{userid}"
+            isbns = self.r.zrange(redis_key, 0, -1)
 
-        self.r.zremrangebyscore(redis_key, "-inf", "+inf")
+            self.r.zremrangebyscore(redis_key, "-inf", "+inf")
 
-        for isbn in isbns:
-            self.r.zrem(f"ratings:isbn:{isbn}", userid)  # Delete from ISBN's sorted set
+            for isbn in isbns:
+                self.r.zrem(f"ratings:isbn:{isbn}", userid)  # Delete from ISBN's sorted set
 
     def update_book_rating(self, user_id, isbn, new_rating):
-        #isbn = isbn.zfill(10)
         isbn = isbn[::-1].zfill(10)[::-1]
         redis_key_user = f"ratings:user:{user_id}"
         redis_key_isbn = f"ratings:isbn:{isbn}"
@@ -150,12 +169,11 @@ class RedisRecommendationSystem:
             user_ratings = self.r.zrange(redis_key, 0, -1, withscores=True)
             unique_books.update(isbn for isbn, _ in user_ratings)
 
-
         unique_books = sorted(unique_books, key=self.custom_sort_key)
-        num_users = len(unique_users)
-        num_books = len(unique_books)
+        len_users = len(unique_users)
+        len_books = len(unique_books)
 
-        user_item_matrix = [[0 for _ in range(num_books)] for _ in range(num_users)]
+        user_item_matrix = [[0 for _ in range(len_books)] for _ in range(len_users)]
 
         for user_id in unique_users:
             redis_key = f"ratings:user:{user_id}"
@@ -227,37 +245,6 @@ def retrieve_book_data(isbn):
     print(book_data)
 
 
-def book_recommendations_indexes(user_item_matrix, target_user_index, num_neighbors=5, num_recommendations=7):
-    user_similarity = cosine_similarity(user_item_matrix)
-    target_user_similarity = user_similarity[target_user_index]
-    most_similar_users_indices = target_user_similarity.argsort()[::-1][1:num_neighbors + 1]
-
-    target_user_ratings = user_item_matrix[target_user_index]
-    predicted_ratings = target_user_ratings.copy()
-
-    for book_index in range(len(target_user_ratings)):
-        if target_user_ratings[book_index] == 0:  # taking into consideration only books unrated by the user
-            rating_sum = 0
-            similarity_sum = 0
-
-            for neighbor_index in most_similar_users_indices:
-                neighbor_similarity = user_similarity[target_user_index][neighbor_index]
-                neighbor_rating = user_item_matrix[neighbor_index][book_index]
-
-                rating_sum += neighbor_similarity * neighbor_rating
-                similarity_sum += neighbor_similarity
-
-            predicted_ratings[book_index] = rating_sum / (similarity_sum + 1e-6)  # Avoid division by zero
-
-    recommended_books_indices = sorted(range(len(predicted_ratings)), key=lambda i: predicted_ratings[i],
-                                       reverse=True)
-    # eliminating already rated books
-    unrated_books_indices = [book_index for book_index in recommended_books_indices if
-                             target_user_ratings[book_index] == 0]
-    recommended_books = unrated_books_indices[:num_recommendations]
-
-    return recommended_books
-
 
 def get_recommendations_redis(userid):
     rrs = RedisRecommendationSystem()
@@ -285,3 +272,15 @@ def get_recommendations_redis(userid):
         recommendations = rrs.get_recommended_books(recommended_isbn)
 
         return recommendations
+
+
+def addUserRedis(userid, location, age):
+    rrs = RedisRecommendationSystem()
+    result = rrs.insert_user(userid, location, age)
+    return result
+
+
+def addRatingRedis(userid, isbn, rating):
+    rrs = RedisRecommendationSystem()
+    result = rrs.add_book_rating(userid, isbn, rating)
+    return result

@@ -8,12 +8,12 @@
 <body>
 <header  id = "start_page_header">
 <h1>BOOK RECOMMENDATION SYSTEM</h1>
+    <a href="/SignUp" id="OptionButton">SIGN UP</a>
 </header>
 <section class = "start_page">
    <h3 id = "user_input_header">PLEASE ENTER YOUR USER ID</h3>
 
-
-    <form method="POST">
+    <form id="loginForm" method="POST">
         <input type="text" name="user_input"  required pattern="[0-9]*"  maxlength="9" >
         <button type="submit"  onclick="checkAndSubmit()">SEND</button>
         <div id="loader_container"> <div id="loader"> </div> </div>
