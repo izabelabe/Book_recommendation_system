@@ -180,15 +180,13 @@ class RecommendationSystem:
         unique_users = sorted(set(user_ids))
         unique_books = sorted(set(rating.isbn for rating in ratings), key=self.custom_sort_key)
 
-        user_to_index = {user_id: index for index, user_id in enumerate(unique_users)}
-
         len_users = len(unique_users)
         len_books = len(unique_books)
         user_item_matrix = [[0 for _ in range(len_books)] for _ in range(len_users)]
 
         # filling the matrix with user item matrix with book ratings
         for row in ratings:
-            user_index = user_to_index[row.userid]
+            user_index = unique_users.index(row.userid)
             book_index = unique_books.index(row.isbn)
             user_item_matrix[user_index][book_index] = row.book_rating
 
@@ -231,20 +229,18 @@ def get_recommendations(userid):
     else:
         ids = rs.get_user_ids(best, worst)
         unique_ids = set(ids)
-
         user_ids = [row.userid for row in unique_ids]
-        if userid not in user_ids:
-            ids.append(user_id)
+        if user_id not in user_ids:
+            user_ids.append(user_id)
         user_item_matrix, unique_users, unique_books = rs.create_user_item_matrix(user_ids)
-        target_user_index = unique_users.index(user_id)
-        book_indexes = book_recommendations_indexes(user_item_matrix, target_user_index)
-
+        user_index = unique_users.index(user_id)
+        books = book_recommendations_indexes(user_item_matrix, user_index)
         recommended_isbn = []
-        for book in book_indexes:
+
+        for book in books:
             recommended_isbn.append(str(unique_books[book]))
 
         recommendations = rs.get_recommended_books(recommended_isbn)
-
         return recommendations
 
 

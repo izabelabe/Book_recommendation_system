@@ -1,6 +1,5 @@
 import redis
 import csv
-from sklearn.metrics.pairwise import cosine_similarity
 import random
 from main import book_recommendations_indexes
 redis_host = 'localhost'
@@ -107,7 +106,7 @@ class RedisRecommendationSystem:
             self.r.zremrangebyscore(redis_key, "-inf", "+inf")
 
             for isbn in isbns:
-                self.r.zrem(f"ratings:isbn:{isbn}", userid)  # Delete from ISBN's sorted set
+                self.r.zrem(f"ratings:isbn:{isbn}", userid)
 
     def update_book_rating(self, user_id, isbn, new_rating):
         isbn = isbn[::-1].zfill(10)[::-1]
@@ -162,8 +161,6 @@ class RedisRecommendationSystem:
         unique_users = sorted(set(user_ids))
         unique_books = set()
 
-        user_to_index = {user_id: index for index, user_id in enumerate(unique_users)}
-
         for user_id in unique_users:
             redis_key = f"ratings:user:{user_id}"
             user_ratings = self.r.zrange(redis_key, 0, -1, withscores=True)
@@ -178,7 +175,7 @@ class RedisRecommendationSystem:
         for user_id in unique_users:
             redis_key = f"ratings:user:{user_id}"
             user_ratings = self.r.zrange(redis_key, 0, -1, withscores=True)
-            user_index = user_to_index[user_id]
+            user_index = unique_books.index(user_id)
             for isbn, rating in user_ratings:
                 book_index = unique_books.index(isbn)
                 user_item_matrix[user_index][book_index] = int(rating)

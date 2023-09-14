@@ -10,7 +10,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 def book_recommendations_indexes(user_item_matrix, user_index, neighbors=5, num_rec=7):
     similarity = cosine_similarity(user_item_matrix)
     user_similarity = similarity[user_index]
-    similar_users = user_similarity.argsort()[::-1][1:neighbors + 1]
+    similar_users = user_similarity.argsort()[::-1][1:neighbors + 1]   #the higher the more similar, but we are not taking into consideration the user itself
     user_ratings = user_item_matrix[user_index]
     predictions = user_ratings.copy()
 

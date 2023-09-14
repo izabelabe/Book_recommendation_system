@@ -184,7 +184,7 @@ class MongoRecommendationSystem:
 
         for user_id in unique_users:
             user_ratings = self.rating_collection.find({'user_id': user_id})
-            user_index = user_to_index[user_id]
+            user_index = unique_users.index(user_id)
             for rating in user_ratings:
                 book_index = unique_books.index(rating['isbn'])
                 user_item_matrix[user_index][book_index] = rating['book_rating']

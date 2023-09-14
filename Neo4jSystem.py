@@ -33,7 +33,7 @@ class Neo4jRecommendationSystem:
 
     def insert_ratings_data(self):
         with self.driver.session() as session:
-            batch_size = 2000  # Adjust this based on your data and available memory
+            batch_size = 2000
 
             query = (
                 "UNWIND $batch AS row "
@@ -68,12 +68,12 @@ class Neo4jRecommendationSystem:
                     session.run(query, batch=batch)
 
     def insert_book_data(self):
-        batch_size = 1000  # Number of records per batch
+        batch_size = 1000
         batch = []
         unique_isbns = set()
         query = (
             "UNWIND $ratings AS rating "
-            "CREATE (:Book {isbn: rating.isbn})"  # Set the ISBN property for the new book node"
+            "CREATE (:Book {isbn: rating.isbn})"
         )
         query2 = (
             "UNWIND $batch AS row "
@@ -276,13 +276,12 @@ class Neo4jRecommendationSystem:
             unique_users = sorted(set(user_ids))
             unique_books = sorted(set(record["isbn"] for record in ratings), key=self.custom_sort_key)
 
-            user_to_index = {user_id: index for index, user_id in enumerate(unique_users)}
             len_users = len(unique_users)
             len_books = len(unique_books)
             user_item_matrix = [[0 for _ in range(len_books)] for _ in range(len_users)]
 
             for rating in ratings:
-                user_index = user_to_index[rating["userid"]]
+                user_index = unique_users.index(rating["userid"])
                 book_index = unique_books.index(rating["isbn"])
                 user_item_matrix[user_index][book_index] = rating["rating"]
 
@@ -327,7 +326,7 @@ def get_recommendations_neo4j(userid):
         return rs.get_general_recommendations()
     else:
         ids = rs.get_user_ids(best, worst)
-        if userid not in ids:
+        if user_id not in ids:
             ids.append(user_id)
         user_item_matrix, unique_users, unique_books = rs.create_user_item_matrix(ids)
         target_user_index = unique_users.index(user_id)

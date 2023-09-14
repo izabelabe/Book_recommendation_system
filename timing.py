@@ -1,5 +1,4 @@
 import time
-
 from RecommendationSystem import get_recommendations
 from RedisSystem import get_recommendations_redis
 from MongoDBSystem import get_recommendations_mongo
@@ -47,32 +46,32 @@ def updating_time(rs, userid, isbn, rating):
 
 
 def time_all(rs):
-    #for _ in range(10):
-        #deleting_time(rs)
-        #inserting_time(rs)
+    for _ in range(10):
+        deleting_time(rs)
+        inserting_time(rs)
 
     userid = 193560 #user with 849 ratigns
     userid2 = 191728  # user with 5 records
     userid3 = 11  #user without ratings
 
 
-   # for _ in range(5):
-   #     recommendation_time(userid)
+    for _ in range(5):
+        recommendation_time(userid)
 
-   # for _ in range(3):
-   #     recommendation_time(userid2)
+    for _ in range(3):
+        recommendation_time(userid2)
 
-   # for _ in range(2):
-   #     recommendation_time(userid3)
+    for _ in range(2):
+        recommendation_time(userid3)
 
     isbn1= "0099850001"
     isbn2 = "0676972152"
 
-   # for n in range(5):
-   #     updating_time(rs, userid, isbn1, n)
+    for n in range(5):
+        updating_time(rs, userid, isbn1, n)
 
-   # for n in range(5):
-   #     updating_time(rs, userid2, isbn2, n)
+    for n in range(5):
+        updating_time(rs, userid2, isbn2, n)
 
 
     userid_list = [193560, 191756, 250764, 91501, 91408, 276747, 276854, 78440, 247488, 156150]
