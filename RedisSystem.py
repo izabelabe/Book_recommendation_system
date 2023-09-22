@@ -175,7 +175,7 @@ class RedisRecommendationSystem:
         for user_id in unique_users:
             redis_key = f"ratings:user:{user_id}"
             user_ratings = self.r.zrange(redis_key, 0, -1, withscores=True)
-            user_index = unique_books.index(user_id)
+            user_index = unique_users.index(user_id)
             for isbn, rating in user_ratings:
                 book_index = unique_books.index(isbn)
                 user_item_matrix[user_index][book_index] = int(rating)
@@ -253,8 +253,11 @@ def get_recommendations_redis(userid):
         return rrs.get_general_recommendations()
     else:
         ids = rrs.get_user_ids(best, worst)
+        print(ids)
         if userid not in ids:
-            ids.add(user_id)
+            ids.add(userid)
+
+        print(ids)
         user_item_matrix, unique_users, unique_books = rrs.create_user_item_matrix(ids)
 
         unique_users = [int(item) for item in unique_users]

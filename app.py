@@ -10,7 +10,7 @@ app = Flask(__name__)
 def input_form():
     if request.method == 'POST':
         user_input = request.form['user_input']
-        books = get_recommendations(user_input)
+        books = get_recommendations_redis(user_input)
         if books == -1:
             return render_template('input.html', error = 1)
         return render_template('books.html', book_data=books, userid = user_input)
@@ -19,7 +19,7 @@ def input_form():
 @app.route('/books', methods=['GET'])
 def books():
     userid = request.args.get('userid')
-    books = get_recommendations(userid)
+    books = get_recommendations_redis(userid)
     return render_template('books.html', book_data=books, userid=userid)
 
 @app.route('/SignUp', methods=['GET','POST'])
@@ -28,7 +28,7 @@ def user_input_form():
         userid = request.form['userid_input']
         location = request.form['location_input']
         age = request.form['age_input']
-        result = addUser(int(userid), location, age)
+        result = addUserRedis(int(userid), location, age)
         if result == -1:
             return render_template('signUp.html', error = 1)
         return render_template('signUp.html', error= 2)
@@ -40,7 +40,7 @@ def addBooks():
     if request.method == 'POST':
         book = request.form['isbn_input']
         rating = request.form['rating_input']
-        result = addRating(int(userid), book, rating)
+        result = addRatingRedis(int(userid), book, rating)
         if result == -1:
             return render_template('bookAddition.html', userid=userid, error = 1)
         elif result == -2:
